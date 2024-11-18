@@ -103,6 +103,7 @@ module "fortigate_scaleset" {
   fortiflex_config_id               = try(each.value.fortiflex_config_id, null)
   fortiflex_retrieve_mode           = try(each.value.fortiflex_retrieve_mode, "use_active")
   enable_accelerated_networking     = try(each.value.enable_accelerated_networking, true)
+  data_type                         = try(each.value.data_type, "custom_data")
   autoscale_notification_emails     = try(each.value.autoscale_notification_emails, [])
   min_count                         = try(each.value.min_count, 1)
   max_count                         = try(each.value.max_count, 1)

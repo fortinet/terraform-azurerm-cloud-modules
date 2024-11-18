@@ -29,6 +29,12 @@ variable "vm_size" {
   default     = "Standard_D2s_v3"
 }
 
+variable "data_type" {
+  description = "Use custom_data or user_data in vmss."
+  type        = string
+  default     = "custom_data"
+}
+
 variable "storage_account_creation_flag" {
   description = "Set to true to create a new storage account; set to false to use the existing one specified with `storage_account_name`."
   type        = bool

@@ -13,6 +13,15 @@ locals {
   private_interface_names                = [for nic in var.network_interfaces : nic.name if !try(nic.create_pip)]
   private_interface_gateway_ip_addresses = [for nic in var.network_interfaces : nic.gateway_ip_address if !try(nic.create_pip, false)]
   lb_frontend_ip_addresses               = [for nic in var.network_interfaces : nic.lb_frontend_ip_address if nic.lb_frontend_ip_address != ""]
+
+  scale_set_config_data = templatefile("${path.module}/bootstrap_fgt.tpl", {
+    public_interface_name                = length(local.public_interface_names) == 1 ? local.public_interface_names[0] : ""
+    public_interface_gateway_ip_address  = length(local.public_interface_gateway_ip_addresses) == 1 ? local.public_interface_gateway_ip_addresses[0] : ""
+    private_interface_name               = length(local.private_interface_names) == 1 ? local.private_interface_names[0] : ""
+    private_interface_gateway_ip_address = length(local.private_interface_gateway_ip_addresses) == 1 ? local.private_interface_gateway_ip_addresses[0] : ""
+    gwlb_frontend_ip_address             = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
+    custom_config                        = length(var.fortigate_custom_config_file_path) > 0 ? file(var.fortigate_custom_config_file_path) : ""
+  })
 }
 
 resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
@@ -38,14 +47,8 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
     }
   }
 
-  custom_data = base64encode(templatefile("${path.module}/bootstrap_fgt.tpl", {
-    public_interface_name                = length(local.public_interface_names) == 1 ? local.public_interface_names[0] : ""
-    public_interface_gateway_ip_address  = length(local.public_interface_gateway_ip_addresses) == 1 ? local.public_interface_gateway_ip_addresses[0] : ""
-    private_interface_name               = length(local.private_interface_names) == 1 ? local.private_interface_names[0] : ""
-    private_interface_gateway_ip_address = length(local.private_interface_gateway_ip_addresses) == 1 ? local.private_interface_gateway_ip_addresses[0] : ""
-    gwlb_frontend_ip_address             = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
-    custom_config                        = length(var.fortigate_custom_config_file_path) > 0 ? file(var.fortigate_custom_config_file_path) : ""
-  }))
+  custom_data = var.data_type == "custom_data" ? base64encode(local.scale_set_config_data) : null
+  user_data   = var.data_type == "user_data" ? base64encode(local.scale_set_config_data) : null
 
   dynamic "network_interface" {
     for_each = var.network_interfaces
@@ -258,6 +261,8 @@ resource "azurerm_linux_function_app" "function_app" {
     "STORAGE_CONTAINER_NAME"         = azurerm_storage_container.container[0].name
     "STORAGE_ACCOUNT_NAME"           = data.azurerm_storage_account.account[0].name
     "STORAGE_SAS_CONFIG"             = data.azurerm_storage_account_sas.account_sas[0].sas
+    "PRIVATE_INTERFACE_NAME"         = length(local.private_interface_names) == 1 ? local.private_interface_names[0] : ""
+    "GWLB_FRONTEND_IP_ADDRESS"       = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
     "FORTIGATE_INSTANCE_USER_NAME"   = var.fortigate_username
     "FORTIGATE_INSTANCE_PASSWORD"    = var.fortigate_password
     "FORTIGATE_LICENSE_SOURCE"       = var.fortigate_license_source
@@ -315,7 +320,7 @@ resource "azurerm_storage_blob" "function_blob" {
 
 # Upload all file type licenses to the container
 resource "azurerm_storage_blob" "fortigate_licenses" {
-  for_each               = var.license_type == "byol" && var.fortigate_license_folder_path != null ? fileset(var.fortigate_license_folder_path, "*") : []
+  for_each               = var.license_type == "byol" && var.fortigate_license_folder_path != null ? fileset(var.fortigate_license_folder_path, "*.lic") : []
   name                   = "licenses/${each.value}"
   storage_account_name   = data.azurerm_storage_account.account[0].name
   storage_container_name = azurerm_storage_container.container[0].name
@@ -328,9 +333,9 @@ data "http" "function_health_check" {
   url                = local.handle_scale_event_endpoint
   method             = "POST"
   request_body       = "{\"reason\": \"TFE health check\"}"
-  request_timeout_ms = 10 * 60 * 1000
+  request_timeout_ms = 3 * 60 * 1000
   retry {
-    attempts = 3
+    attempts = 6
   }
 
   lifecycle {

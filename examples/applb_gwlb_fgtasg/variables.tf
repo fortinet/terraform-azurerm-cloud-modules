@@ -138,6 +138,7 @@ variable "fortigate_scaleset" {
   - fortiflex_retrieve_mode              (Required|string) mode to specify how fortiflex tokens are used, can be use_active or use_stopped, use_stopped mode will use the fortiflex token with stopped status in your fortiflex account.
   - autoscale_metrics                    (Required|map) The metrics used to automatically scale in/out FortiGate instances.
   - autoscale_notification_emails        (Optional|list) Specifies a list of custom email addresses to which the autoscaling notifications will be sent.
+  - data_type                            (Optional|string) Use custom_data or user_data.
   - min_count                            (Optional|number) The minimum number of instances to maintain in the scale set. The default value is `1`.
   - default_count                        (Optional|number) The default number of instances to maintain in the scale set.
   The default value is `1`.
@@ -149,8 +150,8 @@ variable "fortigate_scaleset" {
     statistic                     (Required|string) Specifies how the metrics from multiple instances are combined. Possible values are Average, Max, Min and Sum.
     threshold                     (Required|string) Specifies the threshold of the metric that triggers the scale action.
     time_aggregation              (Required|string) Specifies how the data that's collected should be combined over time. Possible values include Average, Count, Maximum, Minimum, Last and Total.
-    time_grain_minutes            (Required|string) Specifies the granularity of metrics that the rule monitors, which must be one of the pre-defined values returned from the metric definitions for the metric. This value must be between 1 minute and 12 hours.
-    time_window_minutes           (Required|string) Specifies the time range for which data is collected, which must be greater than the delay in metric collection (which varies from resource to resource). This value must be between 5 minutes and 12 hours.
+    time_grain_minutes            (Required|number) Specifies the granularity of metrics that the rule monitors, which must be one of the pre-defined values returned from the metric definitions for the metric. This value must be between 1 minute and 12 hours.
+    time_window_minutes           (Required|number) Specifies the time range for which data is collected, which must be greater than the delay in metric collection (which varies from resource to resource). This value must be between 5 minutes and 12 hours.
     scale_action_direction        (Required|string) The scale direction. Possible values are Increase and Decrease.
     scale_action_type             (Required|string) The type of action that should occur. Possible values are ChangeCount, ExactCount, PercentChangeCount and ServiceAllowedNextValue.
     scale_action_value            (Required|number) The number of instances involved in the scaling action.
@@ -192,8 +193,8 @@ EOF
       statistic                     = string
       threshold                     = string
       time_aggregation              = string
-      time_grain_minutes            = string
-      time_window_minutes           = string
+      time_grain_minutes            = number
+      time_window_minutes           = number
       scale_action_direction        = string
       scale_action_type             = string
       scale_action_value            = number

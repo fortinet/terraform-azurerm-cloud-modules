@@ -5,6 +5,94 @@ resource_group_name          = "applb-gwlb-fgtvmss-w-func-app"
 # Sensitive Azure info
 azure_subscription_id = "<YOUR-OWN-VALUE>"
 
+# Bring your own license FortiGate Scale Set
+fortigate_scaleset = {
+  byol = {
+    # Information used for creating FortiGate VMSS instances, modify as needed
+    vmss_name                     = "fortigate-scaleset-byol"
+    image_version                 = "7.2.8"
+    license_type                  = "byol"
+    architecture                  = "x64"           # or Arm64
+    vnet_key                      = "providerVnet"  # This value should match the corresponding value in the Gateway Load Balancer (GWLB)
+    zones                         = ["1", "2", "3"] # Availability zones used for the instances.
+    storage_account_creation_flag = true
+    network_interfaces = [
+      {
+        name       = "port1"
+        subnet_key = "public"
+        # pick the first ip from the subnet's address_prefixes by default
+        gateway_ip_address = " 192.168.1.1"
+        create_public_ip   = "true"
+      },
+      {
+        name       = "port2"
+        subnet_key = "private"
+        # pick the first ip from the subnet's address_prefixes by default
+        gateway_ip_address  = "192.168.1.129"
+        enable_backend_pool = "true"
+        gwlb_key            = "gwlb"
+        gwlb_backend_key    = "tunnel"
+      }
+    ]
+
+    fortigate_username            = "<YOUR-OWN-VALUE>"
+    fortigate_password            = "<YOUR-OWN-VALUE>"
+    fortigate_license_folder_path = "./licenses"
+    # Used for additional fortigate configurations
+    fortigate_custom_config_file_path = "fortigate_custom_config.conf"
+
+    fortiflex_api_username  = "<YOUR-OWN-VALUE>"
+    fortiflex_api_password  = "<YOUR-OWN-VALUE>"
+    fortiflex_config_id     = "<YOUR-OWN-VALUE>"
+    fortiflex_retrieve_mode = "use_active" # or use_stopped
+
+    # fortigate vmss auto scale info, modify the values as needed
+    autoscale_metrics = {
+      "Percentage CPU Scale Out" = {
+        metric_name                   = "Percentage CPU"
+        operator                      = "GreaterThanOrEqual"
+        statistic                     = "Average"
+        threshold                     = 80
+        time_aggregation              = "Last"
+        time_grain_minutes            = 1
+        time_window_minutes           = 5
+        scale_action_direction        = "Increase",
+        scale_action_type             = "ChangeCount",
+        scale_action_value            = 1
+        scale_action_cooldown_minutes = 50
+      }
+      "Percentage CPU Scale In" = {
+        metric_name                   = "Percentage CPU"
+        operator                      = "LessThanOrEqual"
+        statistic                     = "Average"
+        threshold                     = 80
+        time_aggregation              = "Last"
+        time_grain_minutes            = 1
+        time_window_minutes           = 5
+        scale_action_direction        = "Decrease",
+        scale_action_type             = "ChangeCount",
+        scale_action_value            = 1
+        scale_action_cooldown_minutes = 50
+      }
+    }
+
+    data_type                     = "custom_data" # Default to customer_data for enhanced security. Change it to user_data if you'd like to use user_data in vmss
+    autoscale_notification_emails = []            # Put your own email address here for scalein/scaleout events notification
+    min_count                     = 1
+    default_count                 = 1
+    max_count                     = 2
+
+    scaleout_window_minutes   = 5
+    scaleout_cooldown_minutes = 2
+    scaleout_statistic        = "Average"
+    scaleout_time_aggregation = "Last"
+    scalein_window_minutes    = 5
+    scalein_cooldown_minutes  = 2
+    scalein_statistic         = "Average"
+    scalein_time_aggregation  = "Last"
+  }
+}
+
 # VNets
 vnets = {
   providerVnet = {
@@ -114,92 +202,6 @@ gateway_load_balancers = {
         }
       }
     }
-  }
-}
-
-# Bring your own license FortiGate Scale Set
-fortigate_scaleset = {
-  byol = {
-    # Information used for creating FortiGate VMSS instances, modify as needed
-    vmss_name                     = "fortigate-scaleset-byol"
-    image_version                 = "7.2.8"
-    license_type                  = "byol"
-    architecture                  = "x64"           # or Arm64
-    vnet_key                      = "providerVnet"      # This value should match the corresponding value in the Gateway Load Balancer (GWLB)
-    zones                         = ["1", "2", "3"] # Availability zones used for the instances.
-    storage_account_creation_flag = true
-    network_interfaces = [
-      {
-        name       = "port1"
-        subnet_key = "public"
-        # pick the first ip from the subnet's address_prefixes by default
-        gateway_ip_address = " 192.168.1.1"
-        create_public_ip   = "true"
-      },
-      {
-        name       = "port2"
-        subnet_key = "private"
-        # pick the first ip from the subnet's address_prefixes by default
-        gateway_ip_address  = "192.168.1.129"
-        enable_backend_pool = "true"
-        gwlb_key            = "gwlb"
-        gwlb_backend_key    = "tunnel"
-      }
-    ]
-
-    fortigate_username            = "<YOUR-OWN-VALUE>"
-    fortigate_password            = "<YOUR-OWN-VALUE>"
-    fortigate_license_folder_path = "./licenses"
-    # Used for additional fortigate configurations
-    fortigate_custom_config_file_path = "fortigate_custom_config.conf"
-
-    fortiflex_api_username  = "<YOUR-OWN-VALUE>"
-    fortiflex_api_password  = "<YOUR-OWN-VALUE>"
-    fortiflex_config_id     = "<YOUR-OWN-VALUE>"
-    fortiflex_retrieve_mode = "use_active" # or use_stopped
-
-    # fortigate vmss auto scale info, modify the values as needed
-    autoscale_metrics = {
-      "Percentage CPU Scale Out" = {
-        metric_name                   = "Percentage CPU"
-        operator                      = "GreaterThanOrEqual"
-        statistic                     = "Average"
-        threshold                     = 80
-        time_aggregation              = "Last"
-        time_grain_minutes            = 1
-        time_window_minutes           = 5
-        scale_action_direction        = "Increase",
-        scale_action_type             = "ChangeCount",
-        scale_action_value            = 1
-        scale_action_cooldown_minutes = 120
-      }
-      "Percentage CPU Scale In" = {
-        metric_name                   = "Percentage CPU"
-        operator                      = "LessThanOrEqual"
-        statistic                     = "Average"
-        threshold                     = 80
-        time_aggregation              = "Last"
-        time_grain_minutes            = 1
-        time_window_minutes           = 5
-        scale_action_direction        = "Decrease",
-        scale_action_type             = "ChangeCount",
-        scale_action_value            = 1
-        scale_action_cooldown_minutes = 80
-      }
-    }
-    autoscale_notification_emails = [] # Put your own email address here for scalein/scaleout events notification
-    min_count                     = 1
-    default_count                 = 1
-    max_count                     = 2
-
-    scaleout_window_minutes   = 5
-    scaleout_cooldown_minutes = 2
-    scaleout_statistic        = "Average"
-    scaleout_time_aggregation = "Last"
-    scalein_window_minutes    = 5
-    scalein_cooldown_minutes  = 2
-    scalein_statistic         = "Average"
-    scalein_time_aggregation  = "Last"
   }
 }
 
