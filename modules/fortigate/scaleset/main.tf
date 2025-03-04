@@ -12,7 +12,7 @@ locals {
   public_interface_gateway_ip_addresses  = [for nic in var.network_interfaces : nic.gateway_ip_address if try(nic.create_pip, false)]
   private_interface_names                = [for nic in var.network_interfaces : nic.name if !try(nic.create_pip)]
   private_interface_gateway_ip_addresses = [for nic in var.network_interfaces : nic.gateway_ip_address if !try(nic.create_pip, false)]
-  lb_frontend_ip_addresses               = [for nic in var.network_interfaces : nic.lb_frontend_ip_address if nic.lb_frontend_ip_address != ""]
+  lb_frontend_ip_addresses               = [for nic in var.network_interfaces : nic.lb_frontend_ip_address if nic.lb_frontend_ip_address != null && nic.lb_frontend_ip_address != ""]
 
   scale_set_config_data = templatefile("${path.module}/bootstrap_fgt.tpl", {
     public_interface_name                = length(local.public_interface_names) == 1 ? local.public_interface_names[0] : ""
@@ -20,7 +20,7 @@ locals {
     private_interface_name               = length(local.private_interface_names) == 1 ? local.private_interface_names[0] : ""
     private_interface_gateway_ip_address = length(local.private_interface_gateway_ip_addresses) == 1 ? local.private_interface_gateway_ip_addresses[0] : ""
     gwlb_frontend_ip_address             = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
-    custom_config                        = length(var.fortigate_custom_config_file_path) > 0 ? file(var.fortigate_custom_config_file_path) : ""
+    custom_config                        = var.fortigate_custom_config
   })
 }
 
@@ -63,7 +63,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
         name                                   = "primary_ip"
         primary                                = true
         subnet_id                              = nic.value.subnet_id
-        load_balancer_backend_address_pool_ids = nic.key == 0 ? [] : try(nic.value.lb_backend_pool_ids, [])
+        load_balancer_backend_address_pool_ids = try(nic.value.lb_backend_pool_ids, [])
 
         dynamic "public_ip_address" {
           for_each = try(nic.value.create_pip, false) ? [1] : []
@@ -230,9 +230,16 @@ resource "azurerm_service_plan" "plan" {
   sku_name            = "EP1"
 }
 
+resource "random_string" "random_function_app_name" {
+  count   = var.license_type == "byol" ? 1 : 0
+  length  = 6
+  upper   = false
+  special = false
+}
+
 resource "azurerm_linux_function_app" "function_app" {
   count                      = var.license_type == "byol" ? 1 : 0
-  name                       = "${var.vmss_name}-scaleset-event-handler"
+  name                       = "${var.vmss_name}-func-${random_string.random_function_app_name[0].result}"
   resource_group_name        = var.resource_group_name
   location                   = var.location
   service_plan_id            = azurerm_service_plan.plan[0].id
@@ -302,6 +309,7 @@ resource "azurerm_storage_container" "container" {
   name                  = "function-code"
   storage_account_name  = data.azurerm_storage_account.account[0].name
   container_access_type = "private"
+
 }
 
 # Upload the Function App package to the storage account

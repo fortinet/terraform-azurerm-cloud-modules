@@ -93,7 +93,7 @@ variable "network_interfaces" {
     create_pip             = optional(bool, false)
     lb_backend_pool_ids    = optional(list(string), [])
     gateway_ip_address     = string
-    lb_frontend_ip_address = string
+    lb_frontend_ip_address = optional(string)
   }))
 }
 
@@ -124,9 +124,10 @@ variable "fortigate_autoscale_psksecret" {
   type        = string
 }
 
-variable "fortigate_custom_config_file_path" {
-  description = "the file path for custom fortios configrations"
+variable "fortigate_custom_config" {
+  description = "the custom fortios configrations"
   type        = string
+  default     = ""
 }
 
 variable "fortiflex_api_username" {

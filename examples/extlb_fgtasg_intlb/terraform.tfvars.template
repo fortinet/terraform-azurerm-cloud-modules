@@ -1,0 +1,335 @@
+# Common
+location                     = "eastus2"
+azure_subscription_id        = "<YOUR-OWN-VALUE>"
+resource_group_creation_flag = true
+resource_group_name          = "extlb_fgtasg_intlb_test"
+
+tags = {
+  "Name"  = "Example Instance"
+  "Owner" = "Fortinet"
+}
+
+# it's up to you to enable east-west traffic or not, default is false.
+enable_east_west_traffic = true
+
+# VNets
+vnets = {
+  providerVnet = {
+    vnet_name     = "providerVnet"
+    address_space = ["10.20.0.0/24"]
+    subnets = {
+      public = {
+        name                   = "fortigate-public"
+        address_prefixes       = ["10.20.0.0/26"]
+        network_security_group = "public"
+      }
+      private = {
+        name                   = "fortigate-private"
+        address_prefixes       = ["10.20.0.64/26"]
+        network_security_group = "private"
+      }
+      protectedA = {
+        name                   = "protectedA-subnet"
+        address_prefixes       = ["10.20.0.128/26"]
+        network_security_group = "private"
+      }
+      protectedB = {
+        name                   = "protectedB-subnet"
+        address_prefixes       = ["10.20.0.192/26"]
+        network_security_group = "private"
+      }
+    }
+
+    network_security_groups = {
+      # the key `public` is matched with the nsg value in the subnets above
+      public = {
+        name = "fortigate-public"
+        rules = {
+          fortigate_public_allow_inbound = {
+            priority              = 100
+            direction             = "Inbound"
+            access                = "Allow"
+            protocol              = "*"
+            source_address_prefix = "*"
+            # source_address_prefixes    = ["10.36.7.77", "10.36.2.12"]
+            source_port_range          = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "*"
+            # destination_port_ranges    = ["80", "443", "22"]
+          }
+        }
+      }
+      # define your own network security group if needed
+      # the key `private` is matched with the nsg value in the subnets above
+      private = {
+        name = "fortigate-private"
+        rules = {
+          fortigate_private_allow_inbound = {
+            priority              = 100
+            direction             = "Inbound"
+            access                = "Allow"
+            protocol              = "*"
+            source_address_prefix = "*"
+            # source_address_prefixes    = ["10.36.7.77", "10.36.2.12"]
+            source_port_range          = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "*"
+            # destination_port_ranges    = ["80", "443", "22"]
+          }
+        }
+      }
+    }
+  }
+
+  # Spoke VNets, define your own spoke VNets here
+  spoke1-vnet = {
+    vnet_name     = "spoke1-vnet"
+    address_space = ["10.15.0.0/24"]
+    subnets = {
+      spoke1-subnet = {
+        name                   = "spoke1-subnet"
+        address_prefixes       = ["10.15.0.0/25"]
+        network_security_group = "spoke1-nsg"
+      }
+    }
+    network_security_groups = {
+      spoke1-nsg = {
+        name = "spoke1-nsg"
+        rules = {
+          allow_inbound = {
+            priority              = 100
+            direction             = "Inbound"
+            access                = "Allow"
+            protocol              = "*"
+            source_address_prefix = "*"
+            # source_address_prefixes    = ["10.36.7.77", "10.36.2.12"]
+            source_port_range          = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "*"
+            # destination_port_ranges    = ["80", "443", "22"]
+          }
+        }
+      }
+    }
+  }
+
+  spoke2-vnet = {
+    vnet_name     = "spoke2-vnet"
+    address_space = ["10.10.0.0/24"]
+    subnets = {
+      spoke2-subnet = {
+        name                   = "spoke2-subnet"
+        address_prefixes       = ["10.10.0.0/25"]
+        network_security_group = "spoke2-nsg"
+      }
+    }
+    network_security_groups = {
+      spoke2-nsg = {
+        name = "spoke2-nsg"
+        rules = {
+          allow_inbound = {
+            priority              = 100
+            direction             = "Inbound"
+            access                = "Allow"
+            protocol              = "*"
+            source_address_prefix = "*"
+            # source_address_prefixes    = ["10.36.7.77", "10.36.2.12"]
+            source_port_range          = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "*"
+            # destination_port_ranges    = ["80", "443", "22"]
+          }
+        }
+      }
+    }
+  }
+}
+
+vnet_peering = {
+  provider_and_spoke1 = {
+    provider_vnet_name           = "providerVnet"
+    spoke_vnet_name              = "spoke1-vnet"
+    allow_virtual_network_access = true
+    allow_forwarded_traffic      = true
+    subnet_routes = {
+      "spoke1-subnet" = [
+        {
+          name           = "Default"
+          address_prefix = "0.0.0.0/0"
+          next_hop_type  = "VirtualAppliance"
+          # next_hop_in_ip_address         = null
+          load_balancer_name             = "intlb"
+          frontend_ip_configuration_name = "intlb"
+        }
+      ]
+    }
+  }
+
+  provider_and_spoke2 = {
+    provider_vnet_name           = "providerVnet"
+    spoke_vnet_name              = "spoke2-vnet"
+    allow_virtual_network_access = true
+    allow_forwarded_traffic      = true
+    subnet_routes = {
+      "spoke2-subnet" = [
+        {
+          name           = "Default"
+          address_prefix = "0.0.0.0/0"
+          next_hop_type  = "VirtualAppliance"
+          # next_hop_in_ip_address         = null
+          load_balancer_name             = "intlb"
+          frontend_ip_configuration_name = "intlb"
+        }
+      ]
+    }
+  }
+}
+
+fortigate_scaleset = {
+  byol = {
+    # Information used for creating FortiGate VMSS instances
+    vmss_name                     = "vmss-byol"
+    image_version                 = "7.2.8"
+    license_type                  = "byol"
+    architecture                  = "x64"          # Arm64
+    vnet_key                      = "providerVnet" # This value should match the corresponding value in the Load Balancer.
+    zones                         = ["1", "2", "3"]
+    storage_account_creation_flag = true
+    network_interfaces = [
+      {
+        name       = "port1"
+        subnet_key = "public"
+        # pick the first ip from the subnet's address_prefixes by default
+        gateway_ip_address  = "10.20.0.1"
+        create_public_ip    = "true"
+        enable_backend_pool = "true"
+        gwlb_key            = "extlb"
+      },
+      {
+        name       = "port2"
+        subnet_key = "private"
+        # pick the first ip from the subnet's address_prefixes by default
+        gateway_ip_address  = "10.20.0.65"
+        enable_backend_pool = "true"
+        gwlb_key            = "intlb"
+      }
+    ]
+
+    fortigate_username            = "fgtadmin"
+    fortigate_password            = "VM12345678!"
+    fortigate_license_folder_path = "./licenses"
+    # You can add additional fortigate configurations here, which already include some necessary configurations.
+    fortigate_custom_config_file_path = "fortigate_custom_config.conf"
+
+    fortiflex_api_username  = "<YOUR-OWN-VALUE>"
+    fortiflex_api_password  = "<YOUR-OWN-VALUE>"
+    fortiflex_config_id     = "<YOUR-OWN-VALUE>"
+    fortiflex_retrieve_mode = "use_active"
+
+    # fortigate vmss auto scale info, change the values if needed. Scale-in and scale-out metrics are required.
+    autoscale_metrics = {
+      "Percentage CPU Scale Out" = {
+        metric_name                   = "Percentage CPU"
+        operator                      = "GreaterThanOrEqual"
+        statistic                     = "Average"
+        threshold                     = 80
+        time_aggregation              = "Last"
+        time_grain_minutes            = 1
+        time_window_minutes           = 5
+        scale_action_direction        = "Increase",
+        scale_action_type             = "ChangeCount",
+        scale_action_value            = 1
+        scale_action_cooldown_minutes = 50
+      }
+      "Percentage CPU Scale In" = {
+        metric_name                   = "Percentage CPU"
+        operator                      = "LessThanOrEqual"
+        statistic                     = "Average"
+        threshold                     = 80
+        time_aggregation              = "Last"
+        time_grain_minutes            = 1
+        time_window_minutes           = 5
+        scale_action_direction        = "Decrease",
+        scale_action_type             = "ChangeCount",
+        scale_action_value            = 1
+        scale_action_cooldown_minutes = 50
+      }
+    }
+    data_type                     = "custom_data" # Default to custom_data for enhanced security. Change it to user_data if you'd like to use user_data in vmss
+    autoscale_notification_emails = []
+    min_count                     = 1
+    default_count                 = 1
+    max_count                     = 2
+  }
+}
+
+standard_load_balancers = {
+  extlb = {
+    lb_name    = "extlb"
+    probe_port = "8008"
+    frontend_ips = {
+      extlb = {
+        create_public_ip = true
+        inbound_rules = {
+          ## because fortigate also use port 80 for access, use different mapping port number for the backend_port.
+          http = {
+            enable_floating_ip = true
+            port               = 80
+            backend_port       = 8080
+            protocol           = "Tcp"
+          }
+          # because fortigate also use port 22 for access, use different mapping port number for the backend_port.
+          ssh = {
+            enable_floating_ip = true
+            port               = 22
+            backend_port       = 2222
+            protocol           = "Tcp"
+          }
+          # because fortigate also use port 443 for access, use different mapping port number for the backend_port.
+          https = {
+            enable_floating_ip = true
+            port               = 443
+            backend_port       = 8443
+            protocol           = "Tcp"
+          }
+        }
+        # Define your own outbound_rules if needed.
+        # outbound_rules = {
+        #   outbound_tcp_rule = {
+        #     protocol                 = "Tcp"
+        #     allocated_outbound_ports = 1024
+        #     idle_timeout_in_minutes  = 5
+        #     port                     = "*"
+        #   }
+        # }
+      }
+    }
+  }
+  intlb = {
+    lb_name    = "intlb"
+    probe_port = "8008"
+
+    frontend_ips = {
+      intlb = {
+        vnet_key   = "providerVnet"
+        subnet_key = "private"
+
+        inbound_rules = {
+          allowall = {
+            enable_floating_ip = false
+            port               = 0
+            protocol           = "All"
+          }
+        }
+        # outbound_rules = {
+        #   outbound_tcp_rule = {
+        #     protocol                 = "Tcp"
+        #     allocated_outbound_ports = 1024
+        #     idle_timeout_in_minutes  = 5
+        #     port                     = "*"
+        #   }
+        # }
+      }
+    }
+  }
+}

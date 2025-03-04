@@ -1,6 +1,6 @@
 locals {
   frontend_addresses = {
-    for v in azurerm_lb.lb.frontend_ip_configuration : v.name => try(data.azurerm_public_ip.data_pip[v.name].ip_address, azurerm_public_ip.pip[v.name].ip_address)
+    for v in azurerm_lb.lb.frontend_ip_configuration : v.name => try(data.azurerm_public_ip.data_pip[v.name].ip_address, try(azurerm_public_ip.pip[v.name].ip_address, azurerm_lb.lb.frontend_ip_configuration[0].private_ip_address))
   }
 
   # Flatten and organize inbound and outbound rules

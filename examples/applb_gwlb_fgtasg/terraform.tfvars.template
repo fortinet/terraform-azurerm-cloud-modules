@@ -1,0 +1,244 @@
+location                     = "centralus"
+resource_group_creation_flag = true # Set to true to create a new resource group with the name provided below.
+resource_group_name          = "applb-gwlb-fgtvmss-w-func-app"
+
+# Sensitive Azure info
+azure_subscription_id = "<YOUR-OWN-VALUE>"
+
+# Bring your own license FortiGate Scale Set
+fortigate_scaleset = {
+  byol = {
+    # Information used for creating FortiGate VMSS instances, modify as needed
+    vmss_name                     = "fortigate-scaleset-byol"
+    image_version                 = "7.2.8"
+    license_type                  = "byol"
+    architecture                  = "x64"           # or Arm64
+    vnet_key                      = "providerVnet"  # This value should match the corresponding value in the Gateway Load Balancer (GWLB)
+    zones                         = ["1", "2", "3"] # Availability zones used for the instances.
+    storage_account_creation_flag = true
+    network_interfaces = [
+      {
+        name       = "port1"
+        subnet_key = "public"
+        # pick the first ip from the subnet's address_prefixes by default
+        gateway_ip_address = " 192.168.1.1"
+        create_public_ip   = "true"
+      },
+      {
+        name       = "port2"
+        subnet_key = "private"
+        # pick the first ip from the subnet's address_prefixes by default
+        gateway_ip_address  = "192.168.1.129"
+        enable_backend_pool = "true"
+        gwlb_key            = "gwlb"
+        gwlb_backend_key    = "tunnel"
+      }
+    ]
+
+    fortigate_username            = "<YOUR-OWN-VALUE>"
+    fortigate_password            = "<YOUR-OWN-VALUE>"
+    fortigate_license_folder_path = "./licenses"
+    # Used for additional fortigate configurations
+    fortigate_custom_config_file_path = "fortigate_custom_config.conf"
+
+    fortiflex_api_username  = "<YOUR-OWN-VALUE>"
+    fortiflex_api_password  = "<YOUR-OWN-VALUE>"
+    fortiflex_config_id     = "<YOUR-OWN-VALUE>"
+    fortiflex_retrieve_mode = "use_active" # or use_stopped
+
+    # fortigate vmss auto scale info, modify the values as needed
+    autoscale_metrics = {
+      "Percentage CPU Scale Out" = {
+        metric_name                   = "Percentage CPU"
+        operator                      = "GreaterThanOrEqual"
+        statistic                     = "Average"
+        threshold                     = 80
+        time_aggregation              = "Last"
+        time_grain_minutes            = 1
+        time_window_minutes           = 5
+        scale_action_direction        = "Increase",
+        scale_action_type             = "ChangeCount",
+        scale_action_value            = 1
+        scale_action_cooldown_minutes = 50
+      }
+      "Percentage CPU Scale In" = {
+        metric_name                   = "Percentage CPU"
+        operator                      = "LessThanOrEqual"
+        statistic                     = "Average"
+        threshold                     = 80
+        time_aggregation              = "Last"
+        time_grain_minutes            = 1
+        time_window_minutes           = 5
+        scale_action_direction        = "Decrease",
+        scale_action_type             = "ChangeCount",
+        scale_action_value            = 1
+        scale_action_cooldown_minutes = 50
+      }
+    }
+
+    data_type                     = "custom_data" # Default to customer_data for enhanced security. Change it to user_data if you'd like to use user_data in vmss
+    autoscale_notification_emails = []            # Put your own email address here for scalein/scaleout events notification
+    min_count                     = 1
+    default_count                 = 1
+    max_count                     = 2
+
+    scaleout_window_minutes   = 5
+    scaleout_cooldown_minutes = 2
+    scaleout_statistic        = "Average"
+    scaleout_time_aggregation = "Last"
+    scalein_window_minutes    = 5
+    scalein_cooldown_minutes  = 2
+    scalein_statistic         = "Average"
+    scalein_time_aggregation  = "Last"
+  }
+}
+
+# VNets
+vnets = {
+  providerVnet = {
+    vnet_name     = "providerVnet"
+    address_space = ["192.168.1.0/24"]
+    subnets = {
+      public = {
+        name                   = "fortigate-public"
+        address_prefixes       = ["192.168.1.0/25"]
+        network_security_group = "public"
+      }
+      private = {
+        name                   = "fortigate-private"
+        address_prefixes       = ["192.168.1.128/25"]
+        network_security_group = "private"
+      }
+    }
+
+    network_security_groups = {
+      # the key `public` is matched with the nsg value in the subnets above
+      public = {
+        name = "fortigate-public"
+        rules = {
+          fortigate-public-allow-inbound = {
+            priority              = 100 # Modify as needed
+            direction             = "Inbound"
+            access                = "Allow"
+            protocol              = "*" # Modify as needed
+            source_address_prefix = "*" # Modify as needed
+            # Either source_address_prefix or source_address_prefixes
+            # source_address_prefixes    = ["192.168.7.77", "192.168.2.12"]
+            source_port_range = "*"
+            # Either source_port_range or source_port_ranges
+            # source_port_ranges         = ["443"]
+            destination_address_prefix = "*"
+            # Either destination_address_prefix or destination_address_prefixes
+            # destination_address_prefixes = ["192.168.1.12"]
+            destination_port_range = "*"
+            # Either destination_port_range or destination_port_ranges
+            # destination_port_ranges    = ["80", "443", "22"]
+          }
+        }
+      }
+
+      # define your own network security group if needed
+      # the key `private` is matched with the nsg value in the subnets above
+      private = {
+        name  = "fortigate-private"
+        rules = {}
+      }
+    }
+  }
+
+  # Vnet for the standard load balancer
+  webserver = {
+    vnet_name     = "webserver-vnet"
+    address_space = ["192.168.1.0/24"]
+    subnets = {
+      web = {
+        name                   = "webserver"
+        address_prefixes       = ["192.168.1.0/25"]
+        network_security_group = "web"
+      }
+    }
+    network_security_groups = {
+      web = {
+        name = "webserver"
+        rules = {
+          allow_inbound = {
+            priority                   = 100 # Modify as needed
+            direction                  = "Inbound"
+            access                     = "Allow"
+            protocol                   = "*" # modify as needed
+            source_address_prefix      = "*" # modify as needed
+            source_port_range          = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "*"
+          }
+        }
+      }
+    }
+  }
+}
+
+# Gateway Load Balancer connected with the FortiGate Virtual Machine Scale Set
+gateway_load_balancers = {
+  gwlb = {
+    gwlb_name  = "fortigate-gwlb"
+    vnet_key   = "providerVnet"
+    subnet_key = "private"
+    health_probe = {
+      port = 8008
+    }
+    backend_pools = {
+      tunnel = {
+        tunnel_interfaces = {
+          internal = {
+            type       = "Internal"
+            port       = 2000
+            identifier = 800
+          }
+          external = {
+            type       = "External"
+            port       = 2001
+            identifier = 801
+          }
+        }
+      }
+    }
+  }
+}
+
+# Standard Load Balancer connected with the applications you use
+standard_load_balancers = {
+  webserver = {
+    lb_name = "webserver"
+    frontend_ips = {
+      webserver = {
+        create_public_ip = true
+        gwlb_key         = "gwlb"
+        inbound_rules = {
+          http = {
+            floating_ip = false
+            port        = 80
+            protocol    = "Tcp"
+          }
+          https = {
+            floating_ip = false
+            port        = 443
+            protocol    = "Tcp"
+          }
+        }
+        outbound_rules = {
+          outbound_tcp_rule = {
+            protocol                 = "Tcp"
+            allocated_outbound_ports = 1024
+            idle_timeout_in_minutes  = 5
+            port                     = "*"
+          }
+        }
+      }
+    }
+  }
+}
+
+tags = {
+  "purpose" = "ASG_TEST"
+}
+

@@ -93,22 +93,22 @@ module "fortigate_scaleset" {
     }
   ]
 
-  fortigate_username                = try(each.value.fortigate_username, "fgtadmin")
-  fortigate_password                = try(each.value.fortigate_password, random_password.random_fgt_password)
-  fortigate_license_folder_path     = try("${path.cwd}/${each.value.fortigate_license_folder_path}", "./licenses")
-  fortigate_autoscale_psksecret     = random_password.psksecret.result
-  fortigate_custom_config_file_path = try(each.value.fortigate_custom_config_file_path, "fortigate_custom_config.conf")
-  fortiflex_api_username            = try(each.value.fortiflex_api_username, null)
-  fortiflex_api_password            = try(each.value.fortiflex_api_password, null)
-  fortiflex_config_id               = try(each.value.fortiflex_config_id, null)
-  fortiflex_retrieve_mode           = try(each.value.fortiflex_retrieve_mode, "use_active")
-  enable_accelerated_networking     = try(each.value.enable_accelerated_networking, true)
-  data_type                         = try(each.value.data_type, "custom_data")
-  autoscale_notification_emails     = try(each.value.autoscale_notification_emails, [])
-  min_count                         = try(each.value.min_count, 1)
-  max_count                         = try(each.value.max_count, 1)
-  default_count                     = try(each.value.default_count, 1)
-  autoscale_metrics                 = try(each.value.autoscale_metrics, {})
+  fortigate_username            = try(each.value.fortigate_username, "fgtadmin")
+  fortigate_password            = try(each.value.fortigate_password, random_password.random_fgt_password)
+  fortigate_license_folder_path = try("${path.cwd}/${each.value.fortigate_license_folder_path}", "./licenses")
+  fortigate_autoscale_psksecret = random_password.psksecret.result
+  fortigate_custom_config       = file(try(each.value.fortigate_custom_config_file_path, "fortigate_custom_config.conf"))
+  fortiflex_api_username        = try(each.value.fortiflex_api_username, null)
+  fortiflex_api_password        = try(each.value.fortiflex_api_password, null)
+  fortiflex_config_id           = try(each.value.fortiflex_config_id, null)
+  fortiflex_retrieve_mode       = try(each.value.fortiflex_retrieve_mode, "use_active")
+  enable_accelerated_networking = try(each.value.enable_accelerated_networking, true)
+  data_type                     = try(each.value.data_type, "custom_data")
+  autoscale_notification_emails = try(each.value.autoscale_notification_emails, [])
+  min_count                     = try(each.value.min_count, 1)
+  max_count                     = try(each.value.max_count, 1)
+  default_count                 = try(each.value.default_count, 1)
+  autoscale_metrics             = try(each.value.autoscale_metrics, {})
 
   tags = var.tags
   depends_on = [

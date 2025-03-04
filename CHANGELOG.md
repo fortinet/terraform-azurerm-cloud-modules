@@ -1,4 +1,11 @@
-## 1.0.2 (Unreleased)
+## 1.0.3 (Unreleased)
+
+## 1.0.2 (March 5, 2025)
+
+IMPROVEMENTS:
+
+* Added a new module for deploying a single FortiGate instance on Azure.
+* Add a new example, `extlb_fgtasg_intlb`, to demonstrate three-way traffic inspection, covering inbound, outbound, and east-west traffic flows.
 
 ## 1.0.1 (November 15, 2024)
 
