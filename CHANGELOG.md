@@ -1,4 +1,18 @@
-## 1.0.3 (Unreleased)
+## 1.0.4 (Unreleased)
+
+## 1.0.3 (May 30, 2025)
+IMPROVEMENTS:
+
+* Added the `generic_vm_standalone` module to support deployment of individual Fortinet products, including FortiGate, FortiManager, FortiAnalyzer, FortiGuest, and FortiAIOps.
+* Updated the `azurerm_storage_container` resource to use the `storage_account_id` attribute for improved clarity and maintainability.
+* Added a new parameter `vm_size` for greater flexibilty.
+* Transitioned to using `connection_string` in the `application_insights` resource for better compatibility.
+* Migrated to workspace-based Application Insights resources for improved monitoring and scalability.
+
+BUGFIXES:
+
+* Improved password handling by encoding the FortiGate password in URLs, allowing support for special characters.
+* Made the flextoken variables optional for greater flexibility.
 
 ## 1.0.2 (March 5, 2025)
 

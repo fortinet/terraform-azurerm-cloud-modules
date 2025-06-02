@@ -190,6 +190,7 @@ fortigate_scaleset = {
     # Information used for creating FortiGate VMSS instances
     vmss_name                     = "vmss-byol"
     image_version                 = "7.2.8"
+    vm_size                       = "Standard_D2s_v3"
     license_type                  = "byol"
     architecture                  = "x64"          # Arm64
     vnet_key                      = "providerVnet" # This value should match the corresponding value in the Load Balancer.

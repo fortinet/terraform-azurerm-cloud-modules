@@ -132,10 +132,10 @@ variable "fortigate_scaleset" {
   - fortigate_username                   (Required|string) The default is `fgtadmin`.
   - fortigate_password                   (Required|string) If the value is not provided, a generated string will be used for the password.
   - fortigate_license_folder_path        (Optional|string) The path for file-type licenses. If provided, the licenses will be uploaded; Otherwise, it assumes a FortiFlex token will be used.
-  - fortiflex_api_username               (Required|string) The username used to access to your Fortiflex account.
-  - fortiflex_api_password               (Required|string) The password used to access to your Fortiflex account.
-  - fortiflex_config_id                  (Required|string) The ID of the configuration for which to retrieve the list of VMs.
-  - fortiflex_retrieve_mode              (Required|string) mode to specify how fortiflex tokens are used, can be use_active or use_stopped, use_stopped mode will use the fortiflex token with stopped status in your fortiflex account.
+  - fortiflex_api_username               (Optional|string) The username used to access to your Fortiflex account.
+  - fortiflex_api_password               (Optional|string) The password used to access to your Fortiflex account.
+  - fortiflex_config_id                  (Optional|string) The ID of the configuration for which to retrieve the list of VMs.
+  - fortiflex_retrieve_mode              (Optional|string) mode to specify how fortiflex tokens are used, can be use_active or use_stopped, use_stopped mode will use the fortiflex token with stopped status in your fortiflex account.
   - autoscale_metrics                    (Required|map) The metrics used to automatically scale in/out FortiGate instances.
   - autoscale_notification_emails        (Optional|list) Specifies a list of custom email addresses to which the autoscaling notifications will be sent.
   - data_type                            (Optional|string) Use custom_data or user_data.
@@ -143,19 +143,29 @@ variable "fortigate_scaleset" {
   - default_count                        (Optional|number) The default number of instances to maintain in the scale set.
   The default value is `1`.
   - max_count                            (Optional|number) The maximum number of instances to maintain in the scale set.  The default value is `1`.
+  - fmg_integration                      (Optional|object) Using the User Managed Scaling feature in FortiManager to handle license management for FortiGate.
+
+  Options for fmg_integration:
+    - ip                  (Required|string) The public IP address of the FortiManager.
+    - sn                  (Required|string) The serial number of the FortiManager.
+    - autoscale_psksecret (Optional|string) The PSK secret used for the FortiGate Auto Scale set. If not provided, a generated string will be used.
+    - fmg_password        (Required|string) The password used to access to your FortiManager.
+    - hb_interval         (Optional|number) The interval in seconds between heartbeats sent from the FortiGate instances to the FortiManager. Default value is `30`.
+    - api_key            - (Optional|string) The API key for the FortiManager. This is required if you are using the FortiManager API to manage the FortiGate.
+    - mode               - (Optional|string) Auto-scaling cloud mode.
 
   Options for autoscale_metrics:
-    metric_name                   (Required|string) The autoscale metric name.
-    operator                      (Required|string) Specifies the operator used to compare the metric data and threshold. Possible values are: Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual.
-    statistic                     (Required|string) Specifies how the metrics from multiple instances are combined. Possible values are Average, Max, Min and Sum.
-    threshold                     (Required|string) Specifies the threshold of the metric that triggers the scale action.
-    time_aggregation              (Required|string) Specifies how the data that's collected should be combined over time. Possible values include Average, Count, Maximum, Minimum, Last and Total.
-    time_grain_minutes            (Required|number) Specifies the granularity of metrics that the rule monitors, which must be one of the pre-defined values returned from the metric definitions for the metric. This value must be between 1 minute and 12 hours.
-    time_window_minutes           (Required|number) Specifies the time range for which data is collected, which must be greater than the delay in metric collection (which varies from resource to resource). This value must be between 5 minutes and 12 hours.
-    scale_action_direction        (Required|string) The scale direction. Possible values are Increase and Decrease.
-    scale_action_type             (Required|string) The type of action that should occur. Possible values are ChangeCount, ExactCount, PercentChangeCount and ServiceAllowedNextValue.
-    scale_action_value            (Required|number) The number of instances involved in the scaling action.
-    scale_action_cooldown_minutes (Required|number) The amount of time to wait since the last scaling action before this action occurs. Must be between 1 minute and 1 week.
+    - metric_name                   (Required|string) The autoscale metric name.
+    - operator                      (Required|string) Specifies the operator used to compare the metric data - and threshold. Possible values are: Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual.
+    - statistic                     (Required|string) Specifies how the metrics from multiple instances are combined. Possible values are Average, Max, Min and Sum.
+    - threshold                     (Required|string) Specifies the threshold of the metric that triggers the scale action.
+    - time_aggregation              (Required|string) Specifies how the data that's collected should be combined over time. Possible values include Average, Count, Maximum, Minimum, Last and Total.
+    - time_grain_minutes            (Required|number) Specifies the granularity of metrics that the rule monitors, which must be one of the pre-defined values returned from the metric definitions for the metric. This value must be between 1 minute and 12 hours.
+    - time_window_minutes           (Required|number) Specifies the time range for which data is collected, which must be greater than the delay in metric collection (which varies from resource to resource). This value must be between 5 minutes and 12 hours.
+    - scale_action_direction        (Required|string) The scale direction. Possible values are Increase and Decrease.
+    - scale_action_type             (Required|string) The type of action that should occur. Possible values are ChangeCount, ExactCount, PercentChangeCount and ServiceAllowedNextValue.
+    - scale_action_value            (Required|number) The number of instances involved in the scaling action.
+    - scale_action_cooldown_minutes (Required|number) The amount of time to wait since the last scaling action before this action occurs. Must be between 1 minute and 1 week.
   }
 
 EOF
@@ -183,10 +193,11 @@ EOF
     fortigate_username            = optional(string, "fgtadmin")
     fortigate_password            = optional(string)
     fortigate_license_folder_path = optional(string)
-    fortiflex_api_username        = string
-    fortiflex_api_password        = string
-    fortiflex_config_id           = string
-    fortiflex_retrieve_mode       = string
+    fortiflex_api_username        = optional(string)
+    fortiflex_api_password        = optional(string)
+    fortiflex_config_id           = optional(string)
+    fortiflex_retrieve_mode       = optional(string)
+    vm_size                       = string
     autoscale_metrics = map(object({
       metric_name                   = string
       operator                      = string
@@ -204,6 +215,15 @@ EOF
     min_count                     = optional(number, 1)
     default_count                 = optional(number, 1)
     max_count                     = optional(number, 1)
+    fmg_integration = optional(object({
+      ip                  = string
+      sn                  = string
+      autoscale_psksecret = optional(string)
+      fmg_password        = string
+      hb_interval         = optional(number, 30)
+      mode                = optional(string, "ums")
+      api_key             = optional(string)
+    }))
   }))
 }
 

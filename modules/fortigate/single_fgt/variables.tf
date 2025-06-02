@@ -141,7 +141,6 @@ variable "tags" {
   default     = {}
 }
 
-
 variable "fgt_user_data_template" {
   description = "stores the template to config licenses and other custom data"
   type        = string

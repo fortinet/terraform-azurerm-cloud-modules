@@ -143,6 +143,14 @@ variable "fortigate_scaleset" {
   - default_count                        (Optional|number) The default number of instances to maintain in the scale set.
   The default value is `1`.
   - max_count                            (Optional|number) The maximum number of instances to maintain in the scale set.  The default value is `1`.
+  - fmg_integration                      (Optional|object) Using the User Managed Scaling feature in FortiManager to handle license management for FortiGate.
+
+  Options for fmg_integration:
+    - ip                  (Required|string) The public IP address of the FortiManager.
+    - sn                  (Required|string) The serial number of the FortiManager.
+    - autoscale_psksecret (Optional|string) The PSK secret used for the FortiGate Auto Scale set. If not provided, a generated string will be used.
+    - fmg_password        (Required|string) The password used to access to your FortiManager.
+    - hb_interval         (Optional|number) The interval in seconds between heartbeats sent from the FortiGate instances to the FortiManager. Default value is `30`.
 
   Options for autoscale_metrics:
     metric_name                   (Required|string) The autoscale metric name.
@@ -162,6 +170,7 @@ EOF
 
   type = map(object({
     vmss_name                     = string
+    vm_size                       = string
     storage_account_name          = optional(string)
     storage_account_creation_flag = optional(bool, true)
     zones                         = optional(list(string))
@@ -183,10 +192,10 @@ EOF
     fortigate_username            = optional(string, "fgtadmin")
     fortigate_password            = optional(string)
     fortigate_license_folder_path = optional(string)
-    fortiflex_api_username        = string
-    fortiflex_api_password        = string
-    fortiflex_config_id           = string
-    fortiflex_retrieve_mode       = string
+    fortiflex_api_username        = optional(string)
+    fortiflex_api_password        = optional(string)
+    fortiflex_config_id           = optional(string)
+    fortiflex_retrieve_mode       = optional(string)
     autoscale_metrics = map(object({
       metric_name                   = string
       operator                      = string
@@ -204,6 +213,13 @@ EOF
     min_count                     = optional(number, 1)
     default_count                 = optional(number, 1)
     max_count                     = optional(number, 1)
+    fmg_integration = optional(object({
+      ip                  = string
+      sn                  = string
+      autoscale_psksecret = optional(string)
+      fmg_password        = string
+      hb_interval         = optional(number, 30)
+    }))
   }))
 }
 

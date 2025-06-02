@@ -53,4 +53,27 @@ config router static
     next
 end
 
+%{ if fmg_integration != null ~}
+config system central-management
+    set type fortimanager
+    set fmg ${fmg_integration.ip}
+    set serial-number ${fmg_integration.sn}
+end
+%{ if fmg_integration.mode == "ums" ~}
+config system auto-scale
+    set status enable
+    set sync-interface ${coalesce(private_interface_name, "port2")}
+    set hb-interval ${fmg_integration.hb_interval}
+    set callback-url ${fmg_integration.ip}
+    set cloud-mode ums
+    set psksecret ${fmg_integration.autoscale_psksecret}
+end
+%{ if license_type == "payg" ~}
+exec central-mgmt register-device ${fmg_integration.sn} ${fmg_integration.fmg_password}
+%{ else ~}
+exec central-mgmt register-device-by-ip ${fmg_integration.ip} ${fmg_integration.api_key}
+%{ endif ~}
+%{ endif ~}
+%{ endif ~}
+
 ${custom_config}

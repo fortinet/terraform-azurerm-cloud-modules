@@ -77,7 +77,14 @@ module "fortigate_scaleset" {
   storage_account_creation_flag = try(each.value.storage_account_creation_flag, true)
   vmss_name                     = try(each.value.vmss_name, "fortigate-scaleset")
   image_version                 = try(each.value.image_version, "7.2.8")
-  image_sku                     = format("fortinet_fg-vm%s%s", each.value.license_type == "payg" ? "_payg_2023" : "", try(each.value.architecture, "") == "Arm64" ? "_arm64" : "")
+  # image_sku                     = format("fortinet_fg-vm%s%s", each.value.license_type == "payg" ? "_payg_2023" : "", try(each.value.architecture, "") == "Arm64" ? "_arm64" : "")
+
+  image_sku = format(
+    "fortinet_fg-vm%s%s%s",
+    each.value.license_type == "payg" ? "_payg_2023" : "",
+    try(each.value.architecture, "") == "Arm64" ? "_arm64" : "",
+    contains(["7.6.1", "7.6.2"], each.value.image_version) ? "_g2" : ""
+  )
 
   license_type = try(each.value.license_type, "byol")
 
@@ -109,6 +116,8 @@ module "fortigate_scaleset" {
   max_count                     = try(each.value.max_count, 1)
   default_count                 = try(each.value.default_count, 1)
   autoscale_metrics             = try(each.value.autoscale_metrics, {})
+  vm_size                       = try(each.value.vm_size, "Standard_D2s_v3")
+  fmg_integration               = try(each.value.fmg_integration, null)
 
   tags = var.tags
   depends_on = [

@@ -26,7 +26,6 @@ variable "vmss_name" {
 variable "vm_size" {
   description = "Azure VM type to be created."
   type        = string
-  default     = "Standard_D2s_v3"
 }
 
 variable "data_type" {
@@ -271,6 +270,43 @@ variable "max_count" {
 variable "autoscale_notification_emails" {
   description = "Specifies a list of custom email addresses to which the autoscaling notifications will be sent."
   type        = list(string)
+}
+
+variable "fmg_integration" {
+  description = <<-EOF
+  Using the User Managed Scaling feature in FortiManager to handle license management for FortiGate.
+  Options:
+  - ip                  - (Required|string) The IP address of the FortiManager.
+  - sn                  - (Required|string) The serial number of the FortiGate.
+  - autoscale_psksecret - (Required|string) The pre-shared key used for the FortiGate and FortiManager to communicate.
+  - fmg_password        - (Required|string) The password for the FortiManager.
+  - hb_interval         - (Optional|number) The heartbeat interval in seconds. Default is 10 seconds.
+  - api_key            - (Optional|string) The API key for the FortiManager. This is required if you are using the FortiManager API to manage the FortiGate.
+  - mode              - (Optional|string) Auto-scaling cloud mode.
+  Example:
+  ```
+  fmg_integration = {
+    ip                  = "13.82.216.180"
+    sn                  = "FGT123456789012345"
+    autoscale_psksecret = "fortinet"
+    fmg_password        = "fortinet"
+    hb_interval         = 30
+    mode                = "ums"
+    api_key             = "example_api_key"
+  }
+  ```
+  EOF
+
+  type = object({
+    ip                  = string
+    sn                  = string
+    autoscale_psksecret = string
+    fmg_password        = string
+    hb_interval         = optional(number, 10)
+    mode                = optional(string, "ums")
+    api_key             = optional(string)
+  })
+  default = null
 }
 
 variable "tags" {

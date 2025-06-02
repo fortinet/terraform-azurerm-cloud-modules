@@ -21,6 +21,8 @@ locals {
     private_interface_gateway_ip_address = length(local.private_interface_gateway_ip_addresses) == 1 ? local.private_interface_gateway_ip_addresses[0] : ""
     gwlb_frontend_ip_address             = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
     custom_config                        = var.fortigate_custom_config
+    license_type                         = var.license_type
+    fmg_integration                      = var.fmg_integration
   })
 }
 
@@ -153,11 +155,24 @@ resource "azurerm_monitor_autoscale_setting" "autoscale_setting" {
   tags = var.tags
 }
 
+resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
+  count               = var.license_type == "byol" ? 1 : 0
+  name                = "${var.vmss_name}-law"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+
+  tags = var.tags
+
+}
+
 resource "azurerm_application_insights" "app_insights" {
   count               = var.license_type == "byol" ? 1 : 0
   name                = "${var.vmss_name}-appinsights"
   location            = var.location
   resource_group_name = var.resource_group_name
+  workspace_id        = azurerm_log_analytics_workspace.log_analytics_workspace[0].id
   application_type    = "web"
 }
 
@@ -257,27 +272,28 @@ resource "azurerm_linux_function_app" "function_app" {
   }
 
   app_settings = {
-    "AzureWebJobsStorage"            = data.azurerm_storage_account.account[0].primary_blob_connection_string
-    "WEBSITE_RUN_FROM_PACKAGE"       = "https://${data.azurerm_storage_account.account[0].name}.blob.core.windows.net/${azurerm_storage_container.container[0].name}/${azurerm_storage_blob.function_blob[0].name}?${data.azurerm_storage_account_sas.account_sas[0].sas}"
-    "APPINSIGHTS_INSTRUMENTATIONKEY" = azurerm_application_insights.app_insights[0].instrumentation_key
-    "FUNCTIONS_WORKER_RUNTIME"       = "python"
-    "FUNCTIONS_EXTENSION_VERSION"    = "~4"
-    "AZURE_SUBSCRIPTION_ID"          = var.azure_subscription_id
-    "RESOURCE_GROUP_NAME"            = var.resource_group_name
-    "VMSS_NAME"                      = var.vmss_name
-    "STORAGE_CONTAINER_NAME"         = azurerm_storage_container.container[0].name
-    "STORAGE_ACCOUNT_NAME"           = data.azurerm_storage_account.account[0].name
-    "STORAGE_SAS_CONFIG"             = data.azurerm_storage_account_sas.account_sas[0].sas
-    "PRIVATE_INTERFACE_NAME"         = length(local.private_interface_names) == 1 ? local.private_interface_names[0] : ""
-    "GWLB_FRONTEND_IP_ADDRESS"       = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
-    "FORTIGATE_INSTANCE_USER_NAME"   = var.fortigate_username
-    "FORTIGATE_INSTANCE_PASSWORD"    = var.fortigate_password
-    "FORTIGATE_LICENSE_SOURCE"       = var.fortigate_license_source
-    "AUTOSCALE_PSKSECRET"            = var.fortigate_autoscale_psksecret
-    "FORTIFLEX_USERNAME"             = var.fortiflex_api_username
-    "FORTIFLEX_PASSWORD"             = var.fortiflex_api_password
-    "FORTIFLEX_CONFIG_ID"            = var.fortiflex_config_id
-    "FORTIFLEX_RETRIEVE_MODE"        = var.fortiflex_retrieve_mode
+    "AzureWebJobsStorage"                   = data.azurerm_storage_account.account[0].primary_blob_connection_string
+    "WEBSITE_RUN_FROM_PACKAGE"              = "https://${data.azurerm_storage_account.account[0].name}.blob.core.windows.net/${azurerm_storage_container.container[0].name}/${azurerm_storage_blob.function_blob[0].name}?${data.azurerm_storage_account_sas.account_sas[0].sas}"
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights[0].connection_string
+    "FUNCTIONS_WORKER_RUNTIME"              = "python"
+    "FUNCTIONS_EXTENSION_VERSION"           = "~4"
+    "AZURE_SUBSCRIPTION_ID"                 = var.azure_subscription_id
+    "RESOURCE_GROUP_NAME"                   = var.resource_group_name
+    "VMSS_NAME"                             = var.vmss_name
+    "STORAGE_CONTAINER_NAME"                = azurerm_storage_container.container[0].name
+    "STORAGE_ACCOUNT_NAME"                  = data.azurerm_storage_account.account[0].name
+    "STORAGE_SAS_CONFIG"                    = data.azurerm_storage_account_sas.account_sas[0].sas
+    "PRIVATE_INTERFACE_NAME"                = length(local.private_interface_names) == 1 ? local.private_interface_names[0] : ""
+    "GWLB_FRONTEND_IP_ADDRESS"              = length(local.lb_frontend_ip_addresses) == 1 ? local.lb_frontend_ip_addresses[0] : ""
+    "FORTIGATE_INSTANCE_USER_NAME"          = var.fortigate_username
+    "FORTIGATE_INSTANCE_PASSWORD"           = var.fortigate_password
+    "FORTIGATE_LICENSE_SOURCE"              = var.fortigate_license_source
+    "AUTOSCALE_PSKSECRET"                   = var.fortigate_autoscale_psksecret
+    "FORTIFLEX_USERNAME"                    = var.fortiflex_api_username
+    "FORTIFLEX_PASSWORD"                    = var.fortiflex_api_password
+    "FORTIFLEX_CONFIG_ID"                   = var.fortiflex_config_id
+    "FORTIFLEX_RETRIEVE_MODE"               = var.fortiflex_retrieve_mode
+    "USE_FMG_INTEGRATION"                   = var.fmg_integration != null
   }
 
   identity {
@@ -307,7 +323,7 @@ resource "azurerm_role_assignment" "role_assignment" {
 resource "azurerm_storage_container" "container" {
   count                 = var.license_type == "byol" ? 1 : 0
   name                  = "function-code"
-  storage_account_name  = data.azurerm_storage_account.account[0].name
+  storage_account_id    = data.azurerm_storage_account.account[0].id
   container_access_type = "private"
 
 }
