@@ -4,15 +4,20 @@ locals {
   subnet                 = var.subnet_creation_flag ? azurerm_subnet.subnet[0] : data.azurerm_subnet.existing_subnet[0]
   image_version_is_train = can(regex("^\\d+\\.\\d+$", var.image_version))
   image_version_train    = can(regex("^\\d+\\.\\d+", var.image_version)) ? replace(regex("^\\d+\\.\\d+", var.image_version), ".", "") : var.image_version
-  fortigate_gen_suffix   = var.gen_type == "g2" ? "_g2" : ""
-  fortigate_arch_suffix  = var.architecture == "arm64" ? "_arm64" : ""
-  fortigate_dynamic_sku  = "fortinet_fg-vm_${var.license_type}_${local.image_version_train}${local.fortigate_gen_suffix}${local.fortigate_arch_suffix}"
+  fortigate_license_type = can(regex("payg", var.product_name)) ? "payg" : lower(var.license_type)
+  fortigate_gen_type     = can(regex("g2", var.product_name)) ? "g2" : lower(var.gen_type)
+  fortigate_architecture = can(regex("arm64", var.product_name)) ? "arm64" : lower(var.architecture)
+  fortigate_sku_suffix = local.fortigate_architecture == "arm64" ? "_arm64" : (
+    (can(tonumber(local.image_version_train)) && tonumber(local.image_version_train) >= 76) || local.fortigate_gen_type == "g2" ? "_g2" : ""
+  )
+  fortigate_dynamic_sku = "fortinet_fg-vm_${local.fortigate_license_type}_${local.image_version_train}${local.fortigate_sku_suffix}"
 
   effective_image_offer   = var.image_offer != "" ? var.image_offer : (startswith(var.product_name, "fortigate") ? local.image_offer_tempate["fortigate"] : local.image_offer_tempate[var.product_name])
-  effective_image_sku     = var.image_sku != "" ? var.image_sku : (startswith(var.product_name, "fortigate") ? local.fortigate_dynamic_sku : local.image_sku_template[var.product_name])
+  effective_sku           = var.sku != null ? var.sku : (startswith(var.product_name, "fortigate") ? local.fortigate_dynamic_sku : local.sku_template[var.product_name])
   effective_image_version = (startswith(var.product_name, "fortigate") && local.image_version_is_train) ? "latest" : var.image_version
 
-  image_sku_template = {
+  sku_template = {
+    "fortiproxy"    = "fpx-vm-byol"
     "fortiaiops"    = "fortinet_fortiaiops-vm"
     "fortianalyzer" = "fortinet-fortianalyzer"
     "fortiguest"    = "fortinet_fortiguest-vm"
@@ -21,6 +26,7 @@ locals {
   }
 
   image_offer_tempate = {
+    "fortiproxy"    = "fortinet-fortiproxy"
     "fortiaiops"    = "fortinet-fortiaiops"
     "fortianalyzer" = "fortinet-fortianalyzer"
     "fortiguest"    = "fortinet-fortiguest"
@@ -162,12 +168,12 @@ resource "azurerm_linux_virtual_machine" "instance_vm" {
   source_image_reference {
     publisher = var.image_publisher
     offer     = local.effective_image_offer
-    sku       = local.effective_image_sku
+    sku       = local.effective_sku
     version   = local.effective_image_version
   }
 
   plan {
-    name      = local.effective_image_sku
+    name      = local.effective_sku
     publisher = var.image_publisher
     product   = local.effective_image_offer
   }

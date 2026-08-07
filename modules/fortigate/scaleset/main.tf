@@ -9,6 +9,10 @@ locals {
 
   # Use custom SKU if provided, otherwise use the computed image_sku
   effective_sku = var.sku != null ? var.sku : var.image_sku
+  fortios_major_version = can(regex("^\\d+", var.image_version)) ? tonumber(regex("^\\d+", var.image_version)) : try(
+    floor(tonumber(regex("_([0-9]{2})(?:_|$)", local.effective_sku)[0]) / 10),
+    0
+  )
 
   # Interface details
   public_interface_names                 = [for nic in var.network_interfaces : nic.name if try(nic.create_pip, false)]
@@ -27,7 +31,7 @@ locals {
     license_type                         = var.license_type
     fmg_integration                      = var.fmg_integration
     fortigate_autoscale_psksecret        = var.fortigate_autoscale_psksecret
-    image_version                        = var.image_version
+    fortios_major_version                = local.fortios_major_version
   })
 }
 

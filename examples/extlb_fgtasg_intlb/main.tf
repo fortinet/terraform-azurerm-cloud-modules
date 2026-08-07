@@ -1,5 +1,16 @@
 locals {
   resource_group_name = var.resource_group_creation_flag ? azurerm_resource_group.new_group[0].name : data.azurerm_resource_group.existing_group[0].name
+
+  fortigate_image_skus = {
+    for key, scale_set in var.fortigate_scaleset : key => format(
+      "fortinet_fg-vm_%s_%s%s",
+      coalesce(scale_set.license_type, "byol"),
+      replace(regex("^\\d+\\.\\d+", scale_set.image_version), ".", ""),
+      lower(coalesce(scale_set.architecture, "x64")) == "arm64" ? "_arm64" : (
+        tonumber(replace(regex("^\\d+\\.\\d+", scale_set.image_version), ".", "")) >= 76 || lower(coalesce(scale_set.gen_type, "standard")) == "g2" ? "_g2" : ""
+      )
+    )
+  }
 }
 
 resource "azurerm_resource_group" "new_group" {
@@ -59,26 +70,9 @@ module "fortigate_scaleset" {
 
   image_version = can(regex("^\\d+\\.\\d+$", each.value.image_version)) ? "latest" : each.value.image_version
 
-  license_type = try(each.value.license_type, "byol")
+  license_type = each.value.license_type == null ? "byol" : each.value.license_type
 
-  image_sku = format(
-    "fortinet_fg-vm_%s_%s%s%s",
-    try(each.value.license_type, "byol"),
-    replace(
-      regex(
-        "^\\d+\\.\\d+",
-        each.value.image_version
-      ),
-      ".",
-      ""
-    ),
-    startswith(each.value.image_version, "8.0") ? "" : (
-      lower(try(each.value.gen_type, "")) == "g2" ? "_g2" : ""
-    ),
-    startswith(each.value.image_version, "8.0") ? "" : (
-      lower(try(each.value.architecture, "")) == "arm64" ? "_arm64" : ""
-    )
-  )
+  image_sku = local.fortigate_image_skus[each.key]
 
   sku = try(each.value.sku, null) # Use direct SKU (Approach 2) - set sku in fortigate_scaleset variable
 
@@ -97,7 +91,7 @@ module "fortigate_scaleset" {
   fortigate_password            = try(each.value.fortigate_password, random_password.random_fgt_password.result)
   fortigate_license_folder_path = try("${path.cwd}/${each.value.fortigate_license_folder_path}", "./licenses")
   fortigate_autoscale_psksecret = random_password.psksecret.result
-  fortigate_custom_config = templatefile(try(each.value.fortigate_custom_config_file_path, "${path.module}/fortigate_custom_config.conf"), {
+  fortigate_custom_config = templatefile(each.value.fortigate_custom_config_file_path == null ? "${path.module}/fortigate_custom_config.conf" : each.value.fortigate_custom_config_file_path, {
     enable_east_west_traffic = try(var.enable_east_west_traffic, false)
   })
   fortiflex_api_username        = try(each.value.fortiflex_api_username, null)

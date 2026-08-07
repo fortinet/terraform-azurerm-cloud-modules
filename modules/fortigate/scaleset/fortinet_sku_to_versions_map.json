@@ -17,22 +17,22 @@
   ],
   "fortinet_fg-vm_byol_74_arm64": [
     "7.4.11",
+    "7.4.12",
     "latest"
   ],
   "fortinet_fg-vm_byol_74_g2": [
     "7.4.11",
-    "latest"
-  ],
-  "fortinet_fg-vm_byol_76": [
-    "7.6.6",
+    "7.4.12",
     "latest"
   ],
   "fortinet_fg-vm_byol_76_arm64": [
     "7.6.6",
+    "7.6.7",
     "latest"
   ],
   "fortinet_fg-vm_byol_76_g2": [
     "7.6.6",
+    "7.6.7",
     "latest"
   ],
   "fortinet_fg-vm_payg_70": [
@@ -53,29 +53,37 @@
   ],
   "fortinet_fg-vm_payg_74_arm64": [
     "7.4.11",
+    "7.4.12",
     "latest"
   ],
   "fortinet_fg-vm_payg_74_g2": [
     "7.4.11",
-    "latest"
-  ],
-  "fortinet_fg-vm_payg_76": [
-    "7.6.6",
+    "7.4.12",
     "latest"
   ],
   "fortinet_fg-vm_payg_76_arm64": [
     "7.6.6",
+    "7.6.7",
     "latest"
   ],
   "fortinet_fg-vm_payg_76_g2": [
     "7.6.6",
+    "7.6.7",
     "latest"
   ],
-  "fortinet_fg-vm_payg_80": [
+  "fortinet_fg-vm_byol_80_arm64": [
     "8.0.0",
     "latest"
   ],
-  "fortinet_fg-vm_byol_80": [
+  "fortinet_fg-vm_payg_80_arm64": [
+    "8.0.0",
+    "latest"
+  ],
+  "fortinet_fg-vm_byol_80_g2": [
+    "8.0.0",
+    "latest"
+  ],
+  "fortinet_fg-vm_payg_80_g2": [
     "8.0.0",
     "latest"
   ]

@@ -1,4 +1,16 @@
-## 1.0.7 (Unreleased)
+## 1.0.8 (Unreleased)
+
+## 1.0.7 (August 6, 2026)
+
+IMPROVEMENTS:
+
+* Added a direct `sku` variable to the `generic_vm_standalone` module so users can provide the exact Fortinet Marketplace image SKU when needed.
+* Removed the older `image_sku` input from `generic_vm_standalone` to keep SKU override behavior consistent with the FortiGate scaleset module.
+* Updated FortiGate SKU generation in `generic_vm_standalone` to use the new Marketplace SKU format, including license type, version train, G2, and ARM64 suffix handling.
+* Updated FortiGate scaleset SKU formatting in the examples to use the new Marketplace SKU format, including automatic `_g2` selection for x64 FortiGate 7.6 and later and `_arm64` selection for ARM64 deployments.
+* Updated FortiGate 7.6 and 8.0 x64 deployments to automatically select G2 SKUs, so users do not need to provide `gen_type = "g2"` for those versions.
+* Added validation to block unsupported FortiGate Gen1 direct SKUs: `fortinet_fg-vm_byol_76`, `fortinet_fg-vm_payg_76`, `fortinet_fg-vm_byol_80`, and `fortinet_fg-vm_payg_80`.
+* Updated `generic_vm_standalone` documentation with the new FortiGate SKU patterns, supported image version ranges, and guidance for avoiding Marketplace-visible Gen1 SKUs for FortiGate 7.6 and 8.0.
 
 ## 1.0.6 (May 15, 2026)
 

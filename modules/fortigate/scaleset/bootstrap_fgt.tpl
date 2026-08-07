@@ -160,7 +160,7 @@ Content-Disposition: attachment; filename="postconfig"
 %{ if license_type == "payg" ~}
 exec central-mgmt register-device ${fmg_integration.sn} ${fmg_integration.ums.fmg_register_password}
 %{ else ~}
-%{ if try(tonumber(split(".", trimspace(tostring(image_version)))[0]), 0) >= 8 ~}
+%{ if fortios_major_version >= 8 ~}
 exec central-mgmt register-device-by-address ${fmg_integration.ip} ${fmg_integration.ums.api_key}
 %{ else ~}
 exec central-mgmt register-device-by-ip ${fmg_integration.ip} ${fmg_integration.ums.api_key}

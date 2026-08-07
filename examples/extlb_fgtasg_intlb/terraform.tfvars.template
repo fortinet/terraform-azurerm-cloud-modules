@@ -25,7 +25,7 @@ fortigate_scaleset = {
     # architecture                  = "x64"          # Arm64
 
     # Provide SKU directly via the 'sku' parameter
-    # This bypasses validation and allows using versions not yet in the supported versions map.
+    # This bypasses SKU computation and validation, but image_version is still required by Azure.
     # Example: sku = "fortinet_fg-vm_payg_76_arm64"
 
     vnet_key                      = "providerVnet" # This value should match the corresponding value in the Load Balancer.

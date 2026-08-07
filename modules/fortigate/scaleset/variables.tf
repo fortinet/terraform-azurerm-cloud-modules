@@ -192,7 +192,7 @@ variable "image_version" {
 }
 
 variable "sku" {
-  description = "FortiGate SKU to use directly. If provided, this will be used instead of `image_sku` and validation against the fortinet_sku_to_versions_map.json will be automatically skipped. Use this to deploy image versions not yet in the supported versions map."
+  description = "FortiGate SKU to use directly. If provided, this will be used instead of `image_sku` and validation against the fortinet_sku_to_versions_map.json will be automatically skipped. Azure still requires `image_version` separately. Use this to deploy image versions not yet in the supported versions map."
   type        = string
   default     = null
 }

@@ -35,14 +35,13 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password) | The admin password for the VM | `string` | `"Fortinet@123456"` | no |
-| <a name="input_admin_username"></a> [admin\_username](#input\_admin\_username) | The admin username for the VM | `string` | `"azureadmin"` | no |
+| <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password) | The admin password for the VM. Set this explicitly using a secure input method such as terraform.tfvars, TF_VAR_admin_password, or your CI/CD secret store. | `string` | n/a | yes |
+| <a name="input_admin_username"></a> [admin\_username](#input\_admin\_username) | The admin username for the VM. Set this explicitly for each deployment. | `string` | n/a | yes |
 | <a name="input_azure_subscription_id"></a> [azure\_subscription\_id](#input\_azure\_subscription\_id) | The subscription ID associated with your Azure account. For more information, please visit [this Microsoft documentation](https://learn.microsoft.com/en-us/azure/azure-portal/get-subscription-tenant-id). | `string` | n/a | yes |
 | <a name="input_custom_data_file_path"></a> [custom\_data\_file\_path](#input\_custom\_data\_file\_path) | custom configurations for the fortigate/fortimanager/fortianalyzer | `string` | `""` | no |
 | <a name="input_disk_encryption_set_id"></a> [disk\_encryption\_set\_id](#input\_disk\_encryption\_set\_id) | The ID of the Disk Encryption Set which should be used to encrypt this Data Disk. | `string` | `null` | no |
 | <a name="input_image_offer"></a> [image\_offer](#input\_image\_offer) | The offer name of the image | `string` | `""` | no |
 | <a name="input_image_publisher"></a> [image\_publisher](#input\_image\_publisher) | The publisher of the image | `string` | `"fortinet"` | no |
-| <a name="input_image_sku"></a> [image\_sku](#input\_image\_sku) | The SKU of the image | `string` | `""` | no |
 | <a name="input_image_version"></a> [image\_version](#input\_image\_version) | The version of the image | `string` | n/a | yes |
 | <a name="input_license_file_path"></a> [license\_file\_path](#input\_license\_file\_path) | path to the license file if user selects to use the byol license type | `string` | `""` | no |
 | <a name="input_license_fortiflex"></a> [license\_fortiflex](#input\_license\_fortiflex) | the fortiflex token to use if user selects to use the flex token | `string` | `""` | no |
@@ -53,6 +52,7 @@ No modules.
 | <a name="input_product_name"></a> [product\_name](#input\_product\_name) | The short name for a Fortinet product. Allowed values: fortigate, fortimanager, fortianalyzer, fortiguest, fortiaiops, fortigate-arm64, fortigate-g2, fortigate-payg, fortigate-payg-g2, fortigate-payg-arm64. | `string` | n/a | yes |
 | <a name="input_resource_group_creation_flag"></a> [resource\_group\_creation\_flag](#input\_resource\_group\_creation\_flag) | Set to true to create a new resource group; set to false to use the existing resource group. | `bool` | `true` | no |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | The name of the existing Azure Resource Group. | `string` | `""` | no |
+| <a name="input_sku"></a> [sku](#input\_sku) | Fortinet image SKU to use directly. If provided, this will be used instead of the SKU computed from product_name, license_type, image_version, gen_type, and architecture. Azure still requires image\_version separately. The Gen1 FortiGate SKUs fortinet\_fg-vm\_byol\_76, fortinet\_fg-vm\_payg\_76, fortinet\_fg-vm\_byol\_80, and fortinet\_fg-vm\_payg\_80 are not allowed. | `string` | `null` | no |
 | <a name="input_storage_account_type"></a> [storage\_account\_type](#input\_storage\_account\_type) | The Type of Storage Account which should back this Data Disk. Possible values include Standard\_LRS, StandardSSD\_LRS, StandardSSD\_ZRS, Premium\_LRS, PremiumV2\_LRS, Premium\_ZRS and UltraSSD\_LRS. | `string` | `"StandardSSD_LRS"` | no |
 | <a name="input_subnet_address_prefixes"></a> [subnet\_address\_prefixes](#input\_subnet\_address\_prefixes) | The address prefix for the subnet | `list(string)` | n/a | yes |
 | <a name="input_subnet_creation_flag"></a> [subnet\_creation\_flag](#input\_subnet\_creation\_flag) | Set to true to create a subnet; set to false to use the existing subnet. | `bool` | `true` | no |

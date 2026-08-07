@@ -76,23 +76,36 @@ variable "vm_size" {
 }
 
 variable "admin_username" {
-  description = "The admin username for the VM"
+  description = "The admin username for the VM. Set this explicitly for each deployment."
   type        = string
-  default     = "azureadmin"
+  validation {
+    condition     = trimspace(var.admin_username) != ""
+    error_message = "The admin_username must be provided and cannot be empty."
+  }
 }
 
 variable "admin_password" {
-  description = "The admin password for the VM"
+  description = "The admin password for the VM. Set this explicitly using a secure input method such as terraform.tfvars, TF_VAR_admin_password, or your CI/CD secret store."
   type        = string
   sensitive   = true
-  default     = "Fortinet@123"
   validation {
     condition = (
-      var.product_name == "fortiguest" ||
-      var.product_name == "fortiaiops" ||
-      (trimspace(var.admin_password) != "" && var.admin_password != "Fortinet@123456")
+      trimspace(var.admin_password) != "" &&
+      length(var.admin_password) >= 12 &&
+      can(regex("[A-Z]", var.admin_password)) &&
+      can(regex("[a-z]", var.admin_password)) &&
+      can(regex("[0-9]", var.admin_password)) &&
+      can(regex("[^A-Za-z0-9]", var.admin_password)) &&
+      !contains([
+        "Fortinet@123",
+        "Fortinet@123456",
+        "Fortinet@123456!",
+        "Fortinet###",
+        "Password123!",
+        "ChangeMe123!"
+      ], var.admin_password)
     )
-    error_message = "The admin_password cannot be empty or the default value 'Fortinet@123456' unless the product_name is 'fortiguest' or 'fortiaiops'."
+    error_message = "The admin_password must be provided, must be at least 12 characters, must include uppercase, lowercase, numeric, and special characters, and must not use a known default password."
   }
 }
 
@@ -109,10 +122,19 @@ variable "image_offer" {
   default     = ""
 }
 
-variable "image_sku" {
-  description = "The SKU of the image"
+variable "sku" {
+  description = "Fortinet image SKU to use directly. If provided, this will be used instead of the SKU computed from product_name, license_type, image_version, gen_type, and architecture. Azure still requires image_version separately. The Gen1 FortiGate SKUs fortinet_fg-vm_byol_76, fortinet_fg-vm_payg_76, fortinet_fg-vm_byol_80, and fortinet_fg-vm_payg_80 are not allowed."
   type        = string
-  default     = ""
+  default     = null
+  validation {
+    condition = var.sku == null ? true : !contains([
+      "fortinet_fg-vm_byol_76",
+      "fortinet_fg-vm_payg_76",
+      "fortinet_fg-vm_byol_80",
+      "fortinet_fg-vm_payg_80"
+    ], lower(var.sku))
+    error_message = "The FortiGate Gen1 SKUs fortinet_fg-vm_byol_76, fortinet_fg-vm_payg_76, fortinet_fg-vm_byol_80, and fortinet_fg-vm_payg_80 are not supported. Use the corresponding _g2 SKU for FortiGate 7.6 or 8.0."
+  }
 }
 
 variable "image_version" {
@@ -125,7 +147,7 @@ variable "license_type" {
   type        = string
   default     = "byol"
   validation {
-    condition     = contains(["byol", "payg"], var.license_type)
+    condition     = contains(["byol", "payg"], lower(var.license_type))
     error_message = "The license_type must be either byol or payg."
   }
 }
@@ -135,7 +157,7 @@ variable "gen_type" {
   type        = string
   default     = "standard"
   validation {
-    condition     = contains(["standard", "g2"], var.gen_type)
+    condition     = contains(["standard", "g2"], lower(var.gen_type))
     error_message = "The gen_type must be either standard or g2."
   }
 }
@@ -145,16 +167,17 @@ variable "architecture" {
   type        = string
   default     = "x64"
   validation {
-    condition     = contains(["x64", "arm64"], var.architecture)
+    condition     = contains(["x64", "arm64"], lower(var.architecture))
     error_message = "The architecture must be either x64 or arm64."
   }
 }
 
 variable "product_name" {
-  description = "The short name for a Fortinet product. Allowed values: fortigate, fortimanager, fortianalyzer, fortiguest, fortiaiops, fortigate-arm64, fortigate-g2, fortigate-payg, fortigate-payg-g2, fortigate-payg-arm64."
+  description = "The short name for a Fortinet product. Allowed values: fortiproxy, fortigate, fortimanager, fortianalyzer, fortiguest, fortiaiops, fortigate-arm64, fortigate-g2, fortigate-payg, fortigate-payg-g2, fortigate-payg-arm64."
   type        = string
   validation {
     condition = contains([
+      "fortiproxy",
       "fortigate",
       "fortimanager",
       "fortianalyzer",
@@ -166,7 +189,7 @@ variable "product_name" {
       "fortigate-payg-g2",
       "fortigate-payg-arm64"
     ], var.product_name)
-    error_message = "The product_name must be one of the following: fortigate, fortimanager, fortianalyzer, fortiguest, fortiaiops, fortigate-arm64, fortigate-g2, fortigate-payg, fortigate-payg-g2, fortigate-payg-arm64."
+    error_message = "The product_name must be one of the following: fortiproxy, fortigate, fortimanager, fortianalyzer, fortiguest, fortiaiops, fortigate-arm64, fortigate-g2, fortigate-payg, fortigate-payg-g2, fortigate-payg-arm64."
   }
 }
 

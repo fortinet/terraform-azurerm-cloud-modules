@@ -124,7 +124,7 @@ variable "fortigate_scaleset" {
   - license_type                         (Optional|string) The options are `byol` and `payg`.
   - gen_type                             (Optional|string) The generation type for the FortiGate image. Possible values are `standard` and `g2`.
   - architecture                         (Optional|string) The architecture of the FortiGate image. Possible values are `x64` and `Arm64`.
-  - sku                                  (Optional|string) Direct FortiGate SKU specification. When provided, this bypasses the SKU computation from license_type, image_version, gen_type, and architecture parameters.
+  - sku                                  (Optional|string) Direct FortiGate SKU specification. When provided, this bypasses SKU computation from license_type, image_version, gen_type, and architecture parameters, but image_version is still required by Azure.
   - vm_size                                (Required|string) The size of the Virtual Machine Scale Set instances.
   - zones                                (Optional|list(string)) Specifies a list of Availability Zones in which this Linux Virtual Machine Scale Set should be located.
   - vnet_key                             (Required|string) The VNET hosting the fortigate instances.
@@ -195,15 +195,17 @@ EOF
       gwlb_key            = optional(string) # Optional string
       gwlb_backend_key    = optional(string) # Optional string
     }))
-    enable_accelerated_networking = optional(bool)
-    fortigate_username            = optional(string, "fgtadmin")
-    fortigate_password            = optional(string)
-    fortigate_license_folder_path = optional(string)
-    fortiflex_api_username        = optional(string)
-    fortiflex_api_password        = optional(string)
-    fortiflex_config_id           = optional(string)
-    fortiflex_retrieve_mode       = optional(string)
-    vm_size                       = string
+    enable_accelerated_networking     = optional(bool)
+    fortigate_username                = optional(string, "fgtadmin")
+    fortigate_password                = optional(string)
+    fortigate_license_folder_path     = optional(string)
+    fortigate_custom_config_file_path = optional(string)
+    fortiflex_api_username            = optional(string)
+    fortiflex_api_password            = optional(string)
+    fortiflex_config_id               = optional(string)
+    fortiflex_retrieve_mode           = optional(string)
+    data_type                         = optional(string, "custom_data")
+    vm_size                           = string
     autoscale_metrics = map(object({
       metric_name                   = string
       operator                      = string
